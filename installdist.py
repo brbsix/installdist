@@ -1,72 +1,72 @@
 #!/usr/bin/python3
+# -*- coding: utf-8 -*-
+
 """Smartly install local python source packages."""
 
+import os
+import sys
 
-__program__ = 'subsystem'
-__version__ = '0.3'
+__program__ = 'installdist'
+__version__ = '0.1'
 
-
-# --- BEGIN CODE --- #
 
 class Installer:
+    """A pip-like wrapper for managing package un/installation."""
+
     def __init__(self):
         self.options = None
+        self.suffixes = ['-rev', '.rev', '-dev', '.dev',
+                         '-beta', '.beta', '-alpha', '.alpha']
 
-    def checkPip(self):
-        """Raise an exception if the desired version of pip is not available."""
+    def checkpip(self):
+        """Raise exception if the desired version of pip is not available."""
 
         def finder(script):
-            """Raise an exception upon failure to find executable."""
+            """Raise exception upon failure to find executable."""
             try:
                 from distutil.spawn import find_executable
             except ImportError:
                 from shutil import which as find_executable
 
             if not find_executable(script):
-                raise FileNotFoundError("'%s' is not available" % script)
+                raise FileNotFoundError("'{0}' not available".format(script))
 
         if self.options.pip2:
-            # import sys
-            # sys.tracebacklimit = 1
-            try:
-                raise NotImplementedError("'--pip2' is not yet implemented")
-            except NotImplementedError as exc:
-                print_exception(exc)
             finder('pip2')
         else:
             finder('pip3')
 
-    def detectDistPath(self, startpath):
+    def detectdistpath(self, startpath):  # pylint: disable=R0201
         """Return the relative path to the desired 'dist/' directory."""
-
-        import os
 
         searchpaths = ['.', 'dist/', '../dist/']
 
         for searchpath in searchpaths:
-            testpath = os.path.join(startpath, searchpath) if startpath else searchpath
+            testpath = os.path.join(startpath, searchpath) if startpath else \
+                       searchpath
             basename = os.path.basename(os.path.abspath(testpath))
             if os.path.isdir(testpath) and basename == 'dist':
                 return testpath
 
-    def findName(self, packagepath):
+    def findname(self, packagepath):  # pylint: disable=R0201
         """
         Return an approximated package name.
 
         i.e. /path/to/archive-0.3.tar.gz ==> archive
         """
+        return os.path.basename(packagepath).split('-')[0]
 
-        import os
-        return os.path.basename(packagepath).split('.')[0].split('-')[:-1][0]
-
-    def findPackage(self, distpath):
+    def findpackage(self, distpath):
         """
         Scan files in the 'dist/' directory and return the path
         to the desired package archive.
         """
 
         import glob
-        import os
+
+        # couldn't locate dist path (assume pkg/s are in the current directory)
+        if distpath is None:
+            distpath = '.'
 
         extension = 'whl' if self.options.wheel else 'tar.gz'
         directory = os.path.join(distpath, '*.' + extension)
@@ -74,100 +74,168 @@ class Installer:
         files = [f for f in paths if os.path.isfile(f) and os.access(f, os.R_OK)]
 
         if files:
+            # select the most recent file
             if self.options.newsort:
                 return max(files, key=os.path.getctime)
+            # select the highest version identified via max()
             else:
-                return max(files)
+                maxfile = max(files)
 
-    def installPackage(self, packagepath):
+                dirname = os.path.dirname(maxfile)
+                basename = os.path.basename(maxfile)
+                filename = basename.rstrip('.' + extension)
+
+                # check for packages with developmental versions
+                for suffix in self.suffixes:
+                    basename = filename + suffix + '.' + extension
+                    testfile = os.path.join(dirname, basename)
+                    if os.path.isfile(testfile):
+                        return testfile
+
+                return maxfile
+
+    def installpackage(self, packagepath):
         """Install package archive with pip."""
 
-        from pip.commands.install import InstallCommand
+        _execute(self.options.pipv, 'install', '--user', packagepath)
 
-        install = InstallCommand()
-        install.main(['--user', packagepath])
+    # def installpackage(self, packagepath):
+    #     """Install package archive with pip."""
 
-    def main(self, options):
-        self.options = parse()
+    #     from pip.commands.install import InstallCommand
+    #     install = InstallCommand()
+    #     install.main(['--user', packagepath])
 
-        self.checkPip()
+    def main(self, args=None):
+        """Start package un/installation process."""
 
-        distpath = self.detectDistPath(options.package)
-        packagepath = self.findPackage(distpath)
+        self.options = _parser(args)
 
-        packagename = self.findName(packagepath)
+        if self.options.pip2:
+            self.options.pipv = 'pip2'
+        else:
+            self.options.pipv = 'pip3'
+
+        self.checkpip()
+
+        distpath = self.detectdistpath(self.options.package)
+        packagepath = self.findpackage(distpath)
+
+        if not packagepath:
+            _fatal("Unable to find a package to install")
+
+        packagename = self.findname(packagepath)
 
         if packagename:
-            self.promptUninstall(packagename)
+            self.promptuninstall(packagename)
 
-        self.promptInstall(packagepath)
+        self.promptinstall(packagepath)
 
-    def promptInstall(self, packagepath):
+    def promptinstall(self, packagepath):
         """Prompt to install package archive."""
-
-        import sys
         from os.path import abspath
 
-        print("PACKAGE PATH:", abspath(packagepath))
-        prompt = "Are you sure you'd like to install '%s'? " % packagepath
-        response = getch(prompt).lower()
+        print("\nAre you sure you'd like to install the following package?")
+        print(abspath(packagepath))
+        response = _getch().lower()
         print()
         if response == 'y':
             if self.options.dryrun:
-                print('DRYRUN: running installPackage()...')
+                print("DRYRUN: Installing '{0}'".format(packagepath))
             else:
-                self.installPackage(packagepath)
+                self.installpackage(packagepath)
         else:
             sys.exit(1)
 
-    def promptUninstall(self, packagename):
+    def promptuninstall(self, packagename):
         """Prompt to uninstall package archive."""
 
-        results = self.showPackage(packagename) 
+        results = self.showpackage(packagename)
 
         if results:
-            import sys
             print('Name:', results['name'])
             print('Version:', results['version'])
             print('Location:', results['location'])
-            print('---' * 3)
-            prompt = "Are you sure you'd like to uninstall '%s'? " % results['name']
-            response = getch(prompt).lower()
+            print()
+            prompt = "Are you sure you'd like to uninstall {0} {1}? " \
+                     .format(packagename, results['version'])
+            response = _getch(prompt).lower()
             print()
             if response == 'y':
                 if self.options.dryrun:
-                    print('DRYRUN: running uninstallPackage()...')
+                    print("DRYRUN: Uninstalling {0} {1}"
+                          .format(packagename, results['version']))
                 else:
-                    self.uninstallPackage(packagename)
+                    self.uninstallpackage(packagename)
             else:
                 sys.exit(1)
 
-    def showPackage(self, packagename):
+    def showpackage(self, packagename):
         """Return a set of details for an installed package."""
 
-        from pip.commands.show import search_packages_info
+        import subprocess
 
-        try:
-            generator = search_packages_info([packagename])
-            return list(generator)[0]
-        except:
-            return
+        process = subprocess.Popen([self.options.pipv, 'show', packagename],
+                                   stderr=subprocess.PIPE,
+                                   stdout=subprocess.PIPE)
 
-    def uninstallPackage(self, packagename):
+        info = process.stdout.read().decode().splitlines()[1:]
+
+        results = {}
+
+        if info:
+            results['name'] = info[0].split()[1]
+            results['version'] = info[1].split()[1]
+            results['location'] = info[2].split()[1]
+
+        return results
+
+    # def showpackage(self, packagename):
+    #     """Return a set of details for an installed package."""
+
+    #     from pip.commands.show import search_packages_info
+
+    #     try:
+    #         generator = search_packages_info([packagename])
+    #         return list(generator)[0]
+    #     except:
+    #         return
+
+    def uninstallpackage(self, packagename):
         """Uninstall package archive with pip."""
 
-        from pip.commands import UninstallCommand
+        _execute(self.options.pipv, 'uninstall', packagename)
 
-        uninstall = UninstallCommand()
-        uninstall.main([packagename])
+    # def uninstallpackage(self, packagename):
+    #     """Uninstall package archive with pip."""
+
+        # pip module sometimes fails to identify package to be uninstalled
+        # from pip.commands import UninstallCommand
+        # uninstall = UninstallCommand()
+        # uninstall.main([packagename])
 
 
-def getch(prompt=None):
+def _error(*args):
+    """Print error message to stderr."""
+    print('ERROR:', *args, file=sys.stderr)  # pylint: disable=W0142
+
+
+def _execute(*args):
+    """Execute shell commands with access to terminal."""
+    os.system(' '.join(args))
+
+
+def _fatal(*args):
+    """Print error message to stderr then exit."""
+    _error(*args)
+    sys.exit(1)
+
+
+def _getch(prompt=None):
     """Request a single character input from the user."""
-    import sys
 
     if prompt:
-        sys.stdout.write(prompt + ' ')
+        sys.stdout.write(prompt)
         sys.stdout.flush()
 
     if sys.platform in ['darwin', 'linux']:
@@ -181,18 +249,11 @@ def getch(prompt=None):
         finally:
             termios.tcsetattr(file_descriptor, termios.TCSADRAIN, settings)
     elif sys.platform in ['cygwin', 'win32']:
-        import msvcrt
+        import msvcrt  # pylint: disable=F0401
         return msvcrt.getwch()
 
 
-def main():
-    options = parse()
-
-    installer = Installer()
-    installer.main(options)
-
-
-def parse():
+def _parser(args):
     """Parse command-line options and arguments. Arguments may consist of any
     combination of directories, files, and options."""
 
@@ -201,7 +262,9 @@ def parse():
     parser = argparse.ArgumentParser(
         add_help=False,
         description="Install a local python source package.",
-        epilog="NOTE: By default, %(prog)s uninstalls any preexisting installation then installs the highest version tarball available via pip3",
+        epilog="NOTE: By default, %(prog)s uninstalls any preexisting "
+               "installation then installs the highest version tarball "
+               "available via pip3",
         usage="%(prog)s [OPTIONS] FILES/FOLDERS")
     parser.add_argument(
         "-2", "--pip2",
@@ -236,22 +299,20 @@ def parse():
     parser.add_argument(
         "--version",
         action="version",
-        version="%s %s" % (__program__, __version__))
+        version="{0} {1}".format(__program__, __version__))
     parser.add_argument(
         action="append",
         dest="targets",
         help=argparse.SUPPRESS,
         nargs="*")
 
-    return parser.parse_args()
+    return parser.parse_args(args)
 
 
-def print_exception(exception):
-    """Print fatal exception as briefly as possible, then exit."""
-
-    import sys
-    print('%s: %s' % (exception.__class__.__name__, exception.args[0]))
-    sys.exit(1)
+def main():
+    """Start application."""
+    installer = Installer()
+    installer.main()
 
 
 if __name__ == '__main__':
