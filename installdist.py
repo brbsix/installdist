@@ -7,7 +7,7 @@ import os
 import sys
 
 __program__ = 'installdist'
-__version__ = '0.1.1'
+__version__ = '0.1.2'
 
 
 class Installer:
@@ -79,7 +79,10 @@ class Installer:
                 return max(files, key=os.path.getctime)
             # select the highest version identified via max()
             else:
-                maxfile = max(files)
+                def versionkey(path):
+                    return os.path.basename(path).rstrip('.' + extension).split('-')[1]
+
+                maxfile = max(files, key=versionkey)
 
                 dirname = os.path.dirname(maxfile)
                 basename = os.path.basename(maxfile)
