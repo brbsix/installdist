@@ -7,7 +7,7 @@ import os
 import sys
 
 __program__ = 'installdist'
-__version__ = '0.1'
+__version__ = '0.1.1'
 
 
 class Installer:
@@ -135,11 +135,9 @@ class Installer:
         """Prompt to install package archive."""
         from os.path import abspath
 
-        print("\nAre you sure you'd like to install the following package?")
+        print("\nAre you sure you'd like to install the following package (y/n)?")
         print(abspath(packagepath))
-        response = _getch().lower()
-        print()
-        if response == 'y':
+        if _confirm():
             if self.options.dryrun:
                 print("DRYRUN: Installing '{0}'".format(packagepath))
             else:
@@ -157,11 +155,9 @@ class Installer:
             print('Version:', results['version'])
             print('Location:', results['location'])
             print()
-            prompt = "Are you sure you'd like to uninstall {0} {1}? " \
+            prompt = "Are you sure you'd like to uninstall {0} {1} (y/n)? " \
                      .format(packagename, results['version'])
-            response = _getch(prompt).lower()
-            print()
-            if response == 'y':
+            if _confirm(prompt):
                 if self.options.dryrun:
                     print("DRYRUN: Uninstalling {0} {1}"
                           .format(packagename, results['version']))
@@ -215,6 +211,17 @@ class Installer:
         # uninstall.main([packagename])
 
 
+def _confirm(prompt=None):
+    """Request confirmation from the user."""
+
+    rawinput = input() if prompt is None else input(prompt)
+
+    try:
+        return True if rawinput[0].lower() == 'y' else False
+    except IndexError:
+        return False
+
+
 def _error(*args):
     """Print error message to stderr."""
     print('ERROR:', *args, file=sys.stderr)  # pylint: disable=W0142
@@ -229,28 +236,6 @@ def _fatal(*args):
     """Print error message to stderr then exit."""
     _error(*args)
     sys.exit(1)
-
-
-def _getch(prompt=None):
-    """Request a single character input from the user."""
-
-    if prompt:
-        sys.stdout.write(prompt)
-        sys.stdout.flush()
-
-    if sys.platform in ['darwin', 'linux']:
-        import termios
-        import tty
-        file_descriptor = sys.stdin.fileno()
-        settings = termios.tcgetattr(file_descriptor)
-        try:
-            tty.setraw(file_descriptor)
-            return sys.stdin.read(1)
-        finally:
-            termios.tcsetattr(file_descriptor, termios.TCSADRAIN, settings)
-    elif sys.platform in ['cygwin', 'win32']:
-        import msvcrt  # pylint: disable=F0401
-        return msvcrt.getwch()
 
 
 def _parser(args):
