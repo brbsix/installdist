@@ -10,7 +10,7 @@ import sys
 import tarfile
 
 __program__ = 'installdist'
-__version__ = '0.1.3'
+__version__ = '0.1.4'
 
 
 class Installer:
