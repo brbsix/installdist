@@ -190,18 +190,27 @@ class Installer:
 
         import subprocess
 
-        process = subprocess.Popen([self.options.pipv, 'show', packagename],
-                                   stderr=subprocess.PIPE,
-                                   stdout=subprocess.PIPE)
+        # process = subprocess.Popen([self.options.pipv, 'show', packagename],
+        #                            stderr=subprocess.PIPE,
+        #                            stdout=subprocess.PIPE)
 
-        info = process.stdout.read().decode().splitlines()[1:]
+        # info = process.stdout.read().decode().splitlines()[1:]
+
+        awkscript = "awk '/^Name: / {n=$2} /^Version: / {v=$2} /^Location: / {l=$2} END{printf \"%s|%s|%s\", n, v, l}'"
+
+        output = subprocess.check_output('{0} show {1} | {2}'.format(self.options.pipv, packagename, awkscript),
+            executable='bash',
+            shell=True,
+            stderr=subprocess.PIPE).decode()
+
+        info = output.split('|')
 
         results = {}
 
         if info:
-            results['name'] = info[0].split()[1]
-            results['version'] = info[1].split()[1]
-            results['location'] = info[2].split()[1]
+            results['name'] = info[0]
+            results['version'] = info[1]
+            results['location'] = info[2]
 
         return results
 
