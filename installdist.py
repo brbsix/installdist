@@ -281,6 +281,10 @@ def _parser(args):
         dest="dryrun",
         help="indicate the commands to be run but do not execute them")
     parser.add_argument(
+        "-h", "--help",
+        action="help",
+        help=argparse.SUPPRESS)
+    parser.add_argument(
         "-n", "--new",
         action="store_true",
         dest="newsort",
@@ -296,10 +300,6 @@ def _parser(args):
         action="store_true",
         dest="wheel",
         help="install wheel package")
-    parser.add_argument(
-        "-h", "--help",
-        action="help",
-        help=argparse.SUPPRESS)
     parser.add_argument(
         "--version",
         action="version",
