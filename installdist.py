@@ -62,9 +62,9 @@ class Installer:
             try:
                 tfo = tarfile.open(packagepath)
                 pkgfile = tfo.extractfile(os.path.join(tfo.getnames()[0], 'PKG-INFO'))
-                pkginfo = pkgfile.read().decode()
+                pkgtext = pkgfile.read().decode()
 
-                match = re.search(r'(?<=Name: ).+', pkginfo)
+                match = re.search(r'(?<=Name: ).+', pkgtext)
                 if match:
                     return match.group()
 
