@@ -153,10 +153,9 @@ class Installer:
 
     def promptinstall(self, packagepath):
         """Prompt to install package archive."""
-        from os.path import abspath
 
         print("\nAre you sure you'd like to install the following package (y/n)?")
-        print(abspath(packagepath))
+        print(os.path.abspath(packagepath))
         if _confirm():
             if self.options.dryrun:
                 print("DRYRUN: Installing '{0}'".format(packagepath))
