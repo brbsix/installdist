@@ -198,6 +198,7 @@ class Installer:
                                                                stderr=subprocess.PIPE,
                                                                stdout=subprocess.PIPE)
 
+        # check for a non-zero return code
         if process.wait(timeout=5) != 0:
             return False
 
