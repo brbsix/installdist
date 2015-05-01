@@ -3,8 +3,11 @@
 
 """Smartly install local python source packages."""
 
+
 import os
+import re
 import sys
+import tarfile
 
 __program__ = 'installdist'
 __version__ = '0.1.2'
@@ -54,6 +57,20 @@ class Installer:
 
         i.e. /path/to/archive-0.3.tar.gz ==> archive
         """
+
+        if packagepath.endswith('.tar.gz'):
+            try:
+                tfo = tarfile.open(packagepath)
+                pkgfile = tfo.extractfile(os.path.join(tfo.getnames()[0], 'PKG-INFO'))
+                pkginfo = pkgfile.read().decode()
+
+                match = re.search(r'(?<=Name: ).+', pkginfo)
+                if match:
+                    return match.group()
+
+            except:
+                pass
+
         return os.path.basename(packagepath).split('-')[0]
 
     def findpackage(self, distpath):
