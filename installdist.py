@@ -59,9 +59,16 @@ class Installer:
         """
 
         if packagepath.endswith('.tar.gz'):
+            metafile = 'PKG-INFO'
+        elif packagepath.endswith('.whl'):
+            metafile = 'METADATA'
+        else:
+            metafile = False
+
+        if metafile:
             try:
                 tfo = tarfile.open(packagepath)
-                pkgfile = tfo.extractfile(os.path.join(tfo.getnames()[0], 'PKG-INFO'))
+                pkgfile = tfo.extractfile(os.path.join(tfo.getnames()[0], metafile))
                 pkgtext = pkgfile.read().decode()
 
                 match = re.search(r'(?<=Name: ).+', pkgtext)
