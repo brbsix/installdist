@@ -192,11 +192,6 @@ class Installer:
 
         awkscript = "awk '/^Name: / {n=$2} /^Version: / {v=$2} /^Location: / {l=$2} END{if (n==\"\") exit 1; printf \"%s|%s|%s\", n, v, l}'"
 
-        output = subprocess.check_output('{0} show {1} | {2}'.format(self.options.pipv, packagename, awkscript),
-            executable='bash',
-            shell=True,
-            stderr=subprocess.PIPE).decode()
-
         process = subprocess.Popen('{0} show {1} | {2}'.format(self.options.pipv, packagename, awkscript),
                                                                executable='bash',
                                                                shell=True,
