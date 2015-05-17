@@ -19,6 +19,10 @@ class Installer:
 
     def __init__(self):
         self.options = None
+        self.pkgname = None
+        self.pkgpath = None
+        self.pkgversion = None
+        self.results = {}
 
     def checkpip(self):
         """Configure pip and verify that the desired version is available."""
@@ -99,7 +103,7 @@ class Installer:
             except ImportError:
                 pass
 
-            return wrapper(self.getmetafield(pkgpath, 'version'))
+            return wrapper(getmetafield(pkgpath, 'version'))
 
         import glob
 
@@ -120,66 +124,10 @@ class Installer:
                 # select the package with the highest version number
                 return max(files, key=versionkey)
 
-    def getmetapath(self, afo, pkgpath):
-        """
-        Return path to the metadata file within a tarfile or zipfile object.
-
-        tarfile: PKG-INFO
-        zipfile: metadata.json
-        """
-
-        if isinstance(afo, tarfile.TarFile):
-            pkgname = afo.fileobj.name
-            for path in afo.getnames():
-                if path.endswith('/PKG-INFO'):
-                    return path
-        elif isinstance(afo, zipfile.ZipFile):
-            pkgname = afo.filename
-            for path in afo.namelist():
-                if path.endswith('.dist-info/metadata.json'):
-                    return path
-
-        raise AttributeError("Unable to identify metadata file for '{0}'" \
-                             .format(os.path.basename(pkgname)))
-
-    def getmetafield(self, pkgpath, field):
-        """
-        Return the value of a field from package metadata file.
-        Whenever possible, version fields are returned as a version object.
-
-        i.e. getmetafield('/path/to/archive-0.3.tar.gz', 'name') ==> 'archive'
-        """
-
-        # package is a tar archive
-        if pkgpath.endswith('.tar.gz'):
-
-            with tarfile.open(pkgpath) as tfo:
-                with tfo.extractfile(self.getmetapath(tfo, pkgpath)) as mfo:
-                    metalines = mfo.read().decode().splitlines()
-
-            for line in metalines:
-                if line.startswith(field.capitalize() + ': '):
-                    return line.split(': ')[-1]
-
-        # package is a wheel (zip) archive
-        elif pkgpath.endswith('.whl'):
-
-            import json
-
-            with zipfile.ZipFile(pkgpath) as zfo:
-                metadata = json.loads(zfo.read(self.getmetapath(zfo, pkgpath)).decode())
-                try:
-                    return metadata[field.lower()]
-                except KeyError:
-                    pass
-
-        raise Exception("Unable to extract field '{0}' from package '{1}'". \
-                        format(field, pkgpath))
-
-    def installpackage(self, pkgpath):
+    def installpackage(self):
         """Install package archive with pip."""
 
-        args = [self.options.pipv, 'install', '--user', pkgpath]
+        args = [self.options.pipv, 'install', '--user', self.pkgpath]
 
         # install to system
         if self.options.system:
@@ -189,20 +137,21 @@ class Installer:
         LOGGER.info(args)
 
         if self.options.dryrun:
-            print("DRYRUN: Installing '{0}'".format(pkgpath))
+            print("DRYRUN: Installing '{0}'".format(self.pkgpath))
             print(*args)
         else:
-            _execute(*args)
+            _execute(args)
 
-    # def installpackage(self, pkgpath):
+    # def installpackage(self):
     #     """Install package archive with pip."""
 
     #     if self.options.dryrun:
-    #         print("DRYRUN: Installing '{0}'".format(pkgpath))
+    #         print("DRYRUN: Installing '{0}'".format(self.pkgpath))
     #     else:
     #         from pip.commands.install import InstallCommand
     #         install = InstallCommand()
-    #         install.main(['--user', pkgpath])
+    #         args = [] if self.options.system else ['--user']
+    #         install.main(args + [self.pkgpath])
 
     def main(self, args=None):
         """Start package un/installation process."""
@@ -217,69 +166,57 @@ class Installer:
         # determine the path of package that is to be (un)installed
         self.pkgpath = self.configpackage()
 
-        # determine the name and version of the package from the archive's metadata
-        self.pkgname = self.getmetafield(self.pkgpath, 'name')
-        self.pkgversion = self.getmetafield(self.pkgpath, 'version')
+        # determine name and version from package metadata
+        self.pkgname = getmetafield(self.pkgpath, 'name')
+        self.pkgversion = getmetafield(self.pkgpath, 'version')
 
         if self.pkgname:
             LOGGER.info("Identified package archive metadata: %s",
                         ' '.join([self.pkgname, self.pkgversion]))
-            self.promptuninstall(self.pkgname)
+            self.promptuninstall()
         else:
             LOGGER.warning("Failed to identify package metadata")
 
-        self.promptinstall(self.pkgpath)
+        self.promptinstall()
 
-    def promptinstall(self, pkgpath):
+    def promptinstall(self):
         """Prompt to install package archive."""
 
         prompt = "\n{0}\nAre you sure you'd like to install the aforementio" \
-                 "ned package (y/N)? ".format(os.path.abspath(pkgpath))
+                 "ned package (y/N)? ".format(os.path.abspath(self.pkgpath))
 
-        if _confirm(prompt):
-            self.installpackage(pkgpath)
+        if self.confirm(prompt):
+            self.installpackage()
         else:
             sys.exit(1)
 
-    # def promptinstall(self, pkgpath):
-    #     """Prompt to install package archive."""
-
-    #     print()
-    #     print(os.path.abspath(pkgpath))
-
-    #     prompt = "Are you sure you'd like to install the aforementioned " \
-    #              "package (y/N)? "
-
-    #     if _confirm(prompt):
-    #         self.installpackage(pkgpath)
-    #     else:
-    #         sys.exit(1)
-
-    def promptuninstall(self, pkgname):
+    def promptuninstall(self):
         """Prompt to uninstall package archive."""
 
-        results = self.showpackage(pkgname)
+        self.results = self.showpackage()
 
-        if results:
-            LOGGER.info("Identified installed package: '%s'", pkgname)
+        if self.results:
+            LOGGER.info("Identified installed package: '%s'", self.pkgname)
 
-            print('Name:', results['name'])
-            print('Version:', results['version'])
-            print('Location:', results['location'])
-            print()
+            if not self.options.auto:
+                print('Name:', self.results['name'])
+                print('Version:', self.results['version'])
+                print('Location:', self.results['location'])
+                print()
 
             prompt = "Are you sure you'd like to uninstall {0} {1} (y/N)? " \
-                     .format(pkgname, results['version'])
+                     .format(self.pkgname, self.results['version'])
 
-            if _confirm(prompt):
-                self.uninstallpackage(pkgname, results['version'])
+            if self.confirm(prompt):
+                self.uninstallpackage()
             else:
                 sys.exit(1)
 
         else:
-            LOGGER.info("Failed to identify any installed package: '%s'", pkgname)
+            LOGGER.info("Failed to identify any installed package: '%s'",
+                        self.pkgname)
 
-    def showpackage(self, pkgname):
+    def showpackage(self):
         """Return a set of details for an installed package."""
 
         import subprocess
@@ -288,7 +225,7 @@ class Installer:
               "$2} END{if (n==\"\") exit 1; printf \"%s|%s|%s\", n, v, l}'"
 
         process = subprocess.Popen(
-            '{0} show {1} | {2}'.format(self.options.pipv, pkgname, awk),
+            '{0} show {1} | {2}'.format(self.options.pipv, self.pkgname, awk),
             executable='bash',
             shell=True,
             stderr=subprocess.PIPE,
@@ -309,21 +246,21 @@ class Installer:
 
         return results
 
-    # def showpackage(self, pkgname):
+    # def showpackage(self):
     #     """Return a set of details for an installed package."""
 
     #     from pip.commands.show import search_packages_info
 
     #     try:
-    #         generator = search_packages_info([pkgname])
+    #         generator = search_packages_info([self.pkgname])
     #         return list(generator)[0]
     #     except:
     #         pass
 
-    def uninstallpackage(self, pkgname, pkgver):
+    def uninstallpackage(self):
         """Uninstall package archive with pip."""
 
-        args = [self.options.pipv, 'uninstall', pkgname]
+        args = [self.options.pipv, 'uninstall', self.pkgname]
 
         if self.options.auto:
             args.insert(0, 'echo y |')
@@ -333,32 +270,23 @@ class Installer:
         LOGGER.info(args)
 
         if self.options.dryrun:
-            print('DRYRUN: Uninstalling {0} {1}'.format(pkgname, pkgver))
+            print('DRYRUN: Uninstalling {0} {1}'
+                  .format(self.pkgname, self.results['version']))
             print(*args)
         else:
-            _execute(*args)
+            _execute(args)
 
-    # def uninstallpackage(self, pkgname, pkgver):
+    # def uninstallpackage(self):
     #     """Uninstall package archive with pip."""
 
     #     if self.options.dryrun:
-    #         print('DRYRUN: Uninstalling {0} {1}'.format(pkgname, pkgver))
+    #         print('DRYRUN: Uninstalling {0} {1}'
+    #               .format(self.pkgname, self.results['version']))
     #     else:
     #         # WARNING: can fail to identify the package to be uninstalled
     #         from pip.commands import UninstallCommand
     #         uninstall = UninstallCommand()
-    #         uninstall.main([pkgname])
-
-
-def _confirm(prompt=None):
-    """Request confirmation from the user."""
-
-    rawinput = input() if prompt is None else input(prompt)
-
-    try:
-        return True if rawinput[0].lower() == 'y' else False
-    except IndexError:
-        return False
+    #         uninstall.main([self.pkgname])
 
 
 def _error(*args):
@@ -366,7 +294,7 @@ def _error(*args):
     print('ERROR:', *args, file=sys.stderr)
 
 
-def _execute(*args):
+def _execute(args):
     """Execute shell commands with access to terminal."""
     os.system(' '.join(args))
 
@@ -461,65 +389,60 @@ def detectdistpath(startpath):
             return testpath
 
 
-# def findname(pkgpath):
-#     """
-#     Return package name.
+def getmetapath(pkgpath, afo):
+    """
+    Return path to the metadata file within a tarfile or zipfile object.
 
-#     i.e. /path/to/archive-0.3.tar.gz ==> archive
-#     """
+    tarfile: PKG-INFO
+    zipfile: metadata.json
+    """
 
-#     metafile = 'PKG-INFO' if pkgpath.endswith('.tar.gz') else \
-#                'METADATA' if pkgpath.endswith('.whl') else None
+    if isinstance(afo, tarfile.TarFile):
+        for path in afo.getnames():
+            if path.endswith('/PKG-INFO'):
+                return path
+    elif isinstance(afo, zipfile.ZipFile):
+        for path in afo.namelist():
+            if path.endswith('.dist-info/metadata.json'):
+                return path
 
-#     if metafile:
-#         try:
-#             with tarfile.open(pkgpath) as tfo:
-#                 metapath = os.path.join(tfo.getnames()[0], metafile)
-#                 with tfo.extractfile(metapath) as mfo:
-#                     metalines = mfo.read().decode().splitlines()
-
-#             for line in metalines:
-#                 if line.startswith('Name: '):
-#                     return line.split()[-1]
-
-#         except:
-#             pass
-
-#     return os.path.basename(pkgpath).split('-')[0]
+    raise AttributeError("Unable to identify metadata file for '{0}'"
+                         .format(os.path.basename(pkgpath)))
 
 
-# def findversion(pkgpath):
-#     """
-#     Return package version.
+def getmetafield(pkgpath, field):
+    """
+    Return the value of a field from package metadata file.
+    Whenever possible, version fields are returned as a version object.
 
-#     i.e. /path/to/archive-0.3.tar.gz ==> 0.3
-#     """
+    i.e. getmetafield('/path/to/archive-0.3.tar.gz', 'name') ==> 'archive'
+    """
 
-#     try:
-#         # attempt to use version object (able to perform comparisons)
-#         from distutils.version import LooseVersion as V
-#     except ImportError:
-#         # resort to a simple string object
-#         V = str
+    # package is a tar archive
+    if pkgpath.endswith('.tar.gz'):
 
-#     metafile = 'PKG-INFO' if pkgpath.endswith('.tar.gz') else \
-#                'METADATA' if pkgpath.endswith('.whl') else None
+        with tarfile.open(pkgpath) as tfo:
+            with tfo.extractfile(getmetapath(pkgpath, tfo)) as mfo:
+                metalines = mfo.read().decode().splitlines()
 
-#     if metafile:
-#         try:
-#             with tarfile.open(pkgpath) as tfo:
-#                 metapath = os.path.join(tfo.getnames()[0], metafile)
-#                 with tfo.extractfile(metapath) as mfo:
-#                     metalines = mfo.read().decode().splitlines()
+        for line in metalines:
+            if line.startswith(field.capitalize() + ': '):
+                return line.split(': ')[-1]
 
-#             for line in metalines:
-#                 if line.startswith('Version: '):
-#                     return V(line.split()[-1])
+    # package is a wheel (zip) archive
+    elif pkgpath.endswith('.whl'):
 
-#         except:
-#             pass
+        import json
 
-#     return V(os.path.basename(pkgpath.rstrip(extension)).split('-')[-1])
+        with zipfile.ZipFile(pkgpath) as zfo:
+            metadata = json.loads(zfo.read(getmetapath(pkgpath, zfo)).decode())
+            try:
+                return metadata[field.lower()]
+            except KeyError:
+                pass
+
+    raise Exception("Unable to extract field '{0}' from package '{1}'".
+                    format(field, pkgpath))
 
 
 def main():
