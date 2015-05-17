@@ -17,8 +17,6 @@ The :code:`installdist` package is known to be compatible with Python 3.
 Usage
 =====
 
-::
-
     usage: installdist [OPTIONS] FILES/FOLDERS
 
     Smartly install local Python source packages.
