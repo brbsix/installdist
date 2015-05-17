@@ -23,7 +23,7 @@ setup(
     entry_points={
         'console_scripts': ['installdist=installdist:main'],
     },
-    keywords=['development', 'package', 'pip', 'distribution', 'wheel'],
+    keywords=['development', 'distribution', 'package', 'pip', 'tarball', 'wheel'],
     classifiers=[
         'Development Status :: 4 - Beta',
         'Environment :: Console',
