@@ -68,6 +68,20 @@ class Installer:
         else:
             _fatal('Unable to determine package to install')
 
+    def confirm(self, prompt=None):
+        """Request confirmation from the user."""
+
+        if self.options.auto:
+            LOGGER.info("Bypassing prompt for user input (prompt='%s')", prompt)
+            return True
+
+        rawinput = input() if prompt is None else input(prompt)
+
+        try:
+            return True if rawinput[0].lower() == 'y' else False
+        except IndexError:
+            return False
+
     def findpackage(self, distpath):
         """
         Scan files in the 'dist/' directory and return the path
@@ -311,7 +325,11 @@ class Installer:
 
         args = [self.options.pipv, 'uninstall', pkgname]
 
-        LOGGER.info('Uninstalling %s %s', pkgname, pkgver)
+        if self.options.auto:
+            args.insert(0, 'echo y |')
+
+        LOGGER.info('Uninstalling %s %s', self.pkgname,
+                    self.results['version'])
         LOGGER.info(args)
 
         if self.options.dryrun:
@@ -377,6 +395,11 @@ def _parser(args):
         action='store_true',
         dest='pip2',
         help='install package with pip2')
+    parser.add_argument(
+        '-a', '--auto',
+        action='store_true',
+        dest='auto',
+        help='skip prompts for user input')
     parser.add_argument(
         '-d', '--dry-run',
         action='store_true',
