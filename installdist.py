@@ -11,7 +11,7 @@ import tarfile
 import zipfile
 
 __program__ = 'installdist'
-__version__ = '0.1.5'
+__version__ = '0.1.8'
 
 
 class Installer:
