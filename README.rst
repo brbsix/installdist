@@ -1,7 +1,7 @@
 About
 =====
 
-:code:`installdist` is used to ease the installation of local Python packages. It will probably be most useful to developers who are working with Python packages. With a single command, it will look for the nearest **dist/** directory, identify the package with the highest version (or latest timestamp), uninstall any pre-existing package of the same name, then install the package to the local installation. It doesn't do anything :code:`pip` fundamentally can't, it just simplifies the workflow greatly.
+:code:`installdist` is used to ease the installation of local Python packages. It will probably be most useful to developers who are working with Python packages. With a single command, it will look for the nearest **dist/** directory, identify the package with the highest version (or most recent timestamp), uninstall any pre-existing package with the same name, then install the package to the local installation. It doesn't do anything that :code:`pip` fundamentally can't, it just simplifies the workflow greatly.
 
 
 Installation
@@ -16,6 +16,8 @@ The :code:`installdist` package is known to be compatible with Python 3.
 
 Usage
 =====
+
+::
 
     usage: installdist [OPTIONS] FILES/FOLDERS
 
@@ -35,30 +37,40 @@ Usage
       -w, --wheel           install wheel package
 
     NOTE: By default, installdist will uninstall any pre-existing installation
-    before reinstalling the highest version tarball available with `pip3 install
-    --user`.
+    before using `pip3 install --user` to install the highest version tarball
+    available.
 
-Please note that by default, :code:`installdist` will install the highest version tarball available with :code:`pip3 install --user`. If you'd like to use :code:`pip2`, wheel packages, the package posessing the most recent timestamp, or install to the system installation, use the appropriate flag.
+Please note that by default, :code:`installdist` will use :code:`pip3 install --user` to install the highest version tarball available. If you'd like to use :code:`pip2`, wheel packages, the package with the most recent timestamp, or install to the system installation, use the appropriate flag.
 
-:code:`installdist` will never make any changes without prompting you for confirmation, so don't fear mistakes. To test a command, you may use the dry run flag (:code:`-d` or :code:`--dry-run`). It will simulate the command exactly, including any prompts.
+:code:`installdist` will not make changes without prompting you for confirmation, so don't fear mistakes. To test a command, you may use the dry run flag (:code:`-d` or :code:`--dry-run`). It will simulate the command exactly, including any prompts.
 
 To install a Python source package from the package's root directory, :code:`installdist` will look for a **dist/** directory (in the current and parent directories) and identify the package with the highest version number.
+
+::
 
     installdist
 
 To install a Python source package from the package's root directory, :code:`installdist` will look for a **dist/** directory (in the current and parent directories) and identify the package possessing the most recent timestamp.
 
+::
+
     installdist --new
 
 To install a Python source package:
+
+::
 
     installdist package.tar.gz
 
 To install a Python source package by indicating the package's parent directory:
 
+::
+
     installdist -p ~/Development/project
 
 If you are working in a *virtualenv* or wish to install to your root installation, remember to use the :code:`--system` flag:
+
+::
 
     installdist -s
 
