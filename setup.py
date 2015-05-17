@@ -15,7 +15,7 @@ setup(
     version=__version__,
     author='Brian Beffa',
     author_email='brbsix@gmail.com',
-    description='Smartly install python source packages',
+    description='Smartly install local Python source packages',
     long_description=read('README.rst'),
     url='https://github.com/brbsix/installdist',
     license='GPLv3',
