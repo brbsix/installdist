@@ -1,7 +1,7 @@
 #!/usr/bin/python3
 # -*- coding: utf-8 -*-
 
-"""Smartly install local python source packages."""
+"""Smartly install local Python source packages"""
 
 
 import logging
@@ -40,7 +40,8 @@ class Installer:
             finder('pip3')
             self.options.pipv = 'pip3'
 
-        LOGGER.info("Configured to install packages with: '%s'", self.options.pipv)
+        LOGGER.info("Configured to install packages with: '%s'",
+                    self.options.pipv)
 
     def configpackage(self):
         """Determine what package is to be installed and from where."""
@@ -51,11 +52,13 @@ class Installer:
         pkgpath = None
 
         if self.options.target is not None:
-            LOGGER.info("Configured to install target package: '%s'", self.options.target)
+            LOGGER.info("Configured to install target package: '%s'",
+                        self.options.target)
             if os.path.isfile(self.options.target):
                 pkgpath = self.options.target
         else:
-            LOGGER.info("Configured to scan parent directory: '%s'", self.options.package)
+            LOGGER.info("Configured to scan parent directory: '%s'",
+                        self.options.package)
             distpath = detectdistpath(self.options.package)
             pkgpath = self.findpackage(distpath)
 
@@ -72,7 +75,7 @@ class Installer:
         """
 
         def versionkey(pkgpath):
-            """Return the version of package (to be used as a sort function)."""
+            """Return package version (to be used as a sort function)."""
 
             wrapper = str
 
@@ -86,7 +89,7 @@ class Installer:
 
         import glob
 
-        # couldn't locate dist path (assume pkg/s are in the current directory)
+        # couldn't identify dist/, assume pkg(s) are in the current directory
         if distpath is None:
             distpath = '.'
 
@@ -364,10 +367,10 @@ def _parser(args):
 
     parser = argparse.ArgumentParser(
         add_help=False,
-        description='Install a local python source package.',
-        epilog='NOTE: By default, %(prog)s uninstalls any pre-existing '
+        description='Smartly install local Python source packages.',
+        epilog='NOTE: By default, %(prog)s will uninstall any pre-existing '
                'installation before reinstalling the highest version tarball '
-               'available with pip3',
+               'available with `pip3 install --user`.',
         usage='%(prog)s [OPTIONS] FILES/FOLDERS')
     parser.add_argument(
         '-2', '--pip2',
