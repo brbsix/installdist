@@ -315,8 +315,8 @@ def _parser(args):
         add_help=False,
         description='Smartly install local Python source packages.',
         epilog='NOTE: By default, %(prog)s will uninstall any pre-existing '
-               'installation before reinstalling the highest version tarball '
-               'available with `pip3 install --user`.',
+               'installation before using `pip3 install --user` to install '
+               'the highest version tarball available.',
         usage='%(prog)s [OPTIONS] FILES/FOLDERS')
     parser.add_argument(
         '-2', '--pip2',
