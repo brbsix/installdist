@@ -189,7 +189,10 @@ class Installer:
         LOGGER.setLevel(level)
 
         if self.options.quiet and not self.options.auto:
-            LOGGER.error("'--quiet' can only be used with '--auto'")
+            LOGGER.critical("'--quiet' can only be used with '--auto'")
+            sys.exit(1)
+        elif self.options.quiet and self.options.dryrun:
+            LOGGER.critical("'--quiet' cannot be used with '--dry-run'")
             sys.exit(1)
 
         manager = null if self.options.quiet else not_null
