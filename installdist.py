@@ -10,6 +10,8 @@ import sys
 import tarfile
 import zipfile
 
+from contextlib import contextmanager
+
 __program__ = 'installdist'
 __version__ = '0.1.8'
 
@@ -181,23 +183,31 @@ class Installer:
         level = logging.INFO if self.options.verbose else logging.WARNING
         LOGGER.setLevel(level)
 
-        self.checkpip()
+        if self.options.quiet and not self.options.auto:
+            LOGGER.error("'--quiet' can only be used with '--auto'")
+            sys.exit(1)
 
-        # determine the path of package that is to be (un)installed
-        self.pkgpath = self.configpackage()
+        manager = null if self.options.quiet else not_null
 
-        # determine name and version from package metadata
-        self.pkgname = getmetafield(self.pkgpath, 'name')
-        self.pkgversion = getmetafield(self.pkgpath, 'version')
+        with manager():
 
-        if self.pkgname:
-            LOGGER.info("Identified package archive metadata: %s",
-                        ' '.join([self.pkgname, self.pkgversion]))
-            self.promptuninstall()
-        else:
-            LOGGER.warning("Failed to identify package metadata")
+            self.checkpip()
 
-        self.promptinstall()
+            # determine the path of package that is to be (un)installed
+            self.pkgpath = self.configpackage()
+
+            # determine name and version from package metadata
+            self.pkgname = getmetafield(self.pkgpath, 'name')
+            self.pkgversion = getmetafield(self.pkgpath, 'version')
+
+            if self.pkgname:
+                LOGGER.info("Identified package archive metadata: %s",
+                            ' '.join([self.pkgname, self.pkgversion]))
+                self.promptuninstall()
+            else:
+                LOGGER.warning("Failed to identify package metadata")
+
+            self.promptinstall()
 
     def promptinstall(self):
         """Prompt to install package archive."""
@@ -309,6 +319,41 @@ class Installer:
     #         uninstall.main([self.pkgname])
 
 
+@contextmanager
+def not_null():
+    """Not a context manager. This is just a placeholder."""
+    yield
+
+
+@contextmanager
+def null():
+    """
+    A context manager to temporarily redirect
+    stdout and stderr to /dev/null.
+
+    e.g.:
+
+    with null():
+        compute()
+    """
+
+    try:
+        original_stderr = os.dup(sys.stderr.fileno())
+        original_stdout = os.dup(sys.stdout.fileno())
+        devnull = open(os.devnull, 'w')
+        os.dup2(devnull.fileno(), sys.stderr.fileno())
+        os.dup2(devnull.fileno(), sys.stdout.fileno())
+        yield
+
+    finally:
+        if original_stderr is not None:
+            os.dup2(original_stderr, sys.stderr.fileno())
+        if original_stdout is not None:
+            os.dup2(original_stdout, sys.stdout.fileno())
+        if devnull is not None:
+            devnull.close()
+
+
 def _error(*args):
     """Print error message to stderr."""
     print('ERROR:', *args, file=sys.stderr)
@@ -368,6 +413,11 @@ def _parser(args):
         default='.',
         dest='package',
         help='install package by parent directory')
+    parser.add_argument(
+        '-q', '--quiet',
+        action='store_true',
+        dest='quiet',
+        help='suppress normal output (for use with --auto)')
     parser.add_argument(
         '-s', '--system',
         action='store_true',
