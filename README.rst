@@ -29,6 +29,7 @@ Usage
       -n, --new             install package possessing the most recent timestamp
       -p PACKAGE, --package PACKAGE
                             install package by parent directory
+      -q, --quiet           suppress normal output (for use with --auto)
       -s, --system          install to system directory
       -v, --verbose         set logging level to verbose
       --version             show program's version number and exit
