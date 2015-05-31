@@ -480,8 +480,9 @@ def getmetapath(pkgpath, afo):
             if path.endswith('.dist-info/metadata.json'):
                 return path
 
-    raise AttributeError("Unable to identify metadata file for '{0}'"
-                         .format(os.path.basename(pkgpath)))
+    LOGGER.critical("Unable to identify metadata file for '%s'",
+                    os.path.basename(pkgpath))
+    sys.exit(1)
 
 
 def getmetafield(pkgpath, field):
@@ -515,8 +516,9 @@ def getmetafield(pkgpath, field):
             except KeyError:
                 pass
 
-    raise Exception("Unable to extract field '{0}' from package '{1}'".
-                    format(field, pkgpath))
+    LOGGER.critical("Unable to extract field '%s' from package '%s'",
+                    field, pkgpath)
+    sys.exit(1)
 
 
 def main():
