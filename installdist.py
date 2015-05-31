@@ -473,7 +473,7 @@ def main():
 
 LOGGER = logging.getLogger(__program__)
 STREAM = logging.StreamHandler()
-FORMAT = logging.Formatter('%(name)s:%(levelname)s: %(message)s')
+FORMAT = logging.Formatter('(%(name)s) %(levelname)s: %(message)s')
 STREAM.setFormatter(FORMAT)
 LOGGER.addHandler(STREAM)
 
