@@ -92,7 +92,8 @@ class Installer:
             LOGGER.info("Configured pkgpath to: '%s'", pkgpath)
             return pkgpath
         else:
-            _fatal('Unable to determine package to install')
+            LOGGER.critical("Unable to determine package to install")
+            sys.exit(1)
 
     def confirm(self, prompt=None):
         """Request confirmation from the user."""
@@ -359,20 +360,9 @@ def null():
             devnull.close()
 
 
-def _error(*args):
-    """Print error message to stderr."""
-    print('ERROR:', *args, file=sys.stderr)
-
-
 def _execute(args):
     """Execute shell commands with access to terminal."""
     os.system(' '.join(args))
-
-
-def _fatal(*args):
-    """Print error message to stderr then exit."""
-    _error(*args)
-    sys.exit(1)
 
 
 def _parser(args):
