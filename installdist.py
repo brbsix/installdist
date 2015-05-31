@@ -155,21 +155,25 @@ class Installer:
         if self.options.system:
             args.remove('--user')
 
-        LOGGER.info('Installing %s %s', self.pkgname, self.pkgversion)
-        LOGGER.info(args)
+        logmsg = "Installing %s %s (%s)", self.pkgname, self.pkgversion, self.pkgpath
 
         if self.options.dryrun:
-            print("DRYRUN: Installing '{0}'".format(self.pkgpath))
-            print(*args)
+            LOGGER.dryrun(*logmsg)
+            LOGGER.dryrun(args)
         else:
+            LOGGER.info(*logmsg)
+            LOGGER.info(args)
             _execute(args)
 
     # def installpackage(self):
     #     """Install package archive with pip."""
 
+    #     logmsg = "Installing %s %s (%s)", self.pkgname, self.pkgversion, self.pkgpath
+
     #     if self.options.dryrun:
-    #         print("DRYRUN: Installing '{0}'".format(self.pkgpath))
+    #         LOGGER.dryrun(*logmsg)
     #     else:
+    #         LOGGER.info(*logmsg)
     #         from pip.commands.install import InstallCommand
     #         install = InstallCommand()
     #         args = [] if self.options.system else ['--user']
@@ -295,24 +299,25 @@ class Installer:
         if self.options.auto:
             args.insert(0, 'echo y |')
 
-        LOGGER.info('Uninstalling %s %s', self.pkgname,
-                    self.results['version'])
-        LOGGER.info(args)
+        logmsg = "Uninstalling %s %s", self.pkgname, self.results['version']
 
         if self.options.dryrun:
-            print('DRYRUN: Uninstalling {0} {1}'
-                  .format(self.pkgname, self.results['version']))
-            print(*args)
+            LOGGER.dryrun(*logmsg)
+            LOGGER.dryrun(args)
         else:
+            LOGGER.info(*logmsg)
+            LOGGER.info(args)
             _execute(args)
 
     # def uninstallpackage(self):
     #     """Uninstall package archive with pip."""
 
+    #     logmsg = "Uninstalling %s %s", self.pkgname, self.results['version']
+
     #     if self.options.dryrun:
-    #         print('DRYRUN: Uninstalling {0} {1}'
-    #               .format(self.pkgname, self.results['version']))
+    #         LOGGER.dryrun(*logmsg)
     #     else:
+    #         LOGGER.info(*logmsg)
     #         # WARNING: can fail to identify the package to be uninstalled
     #         from pip.commands import UninstallCommand
     #         uninstall = UninstallCommand()
@@ -459,6 +464,12 @@ def detectdistpath(startpath):
             return testpath
 
 
+def dryrun(self, message, *args, **kwargs):
+    """Create custom log level function for logging module."""
+    if self.isEnabledFor(logging.DRYRUN):
+        self._log(logging.DRYRUN, message, args, **kwargs)  # pylint: disable=W0212
+
+
 def getmetapath(pkgpath, afo):
     """
     Return path to the metadata file within a tarfile or zipfile object.
@@ -521,6 +532,12 @@ def main():
     installer.main()
 
 
+# create custom logging level DRYRUN
+logging.DRYRUN = 35
+logging.addLevelName(logging.DRYRUN, 'DRYRUN')
+logging.Logger.dryrun = dryrun
+
+# configure logging formatter
 LOGGER = logging.getLogger(__program__)
 STREAM = logging.StreamHandler()
 FORMAT = logging.Formatter('(%(name)s) %(levelname)s: %(message)s')
