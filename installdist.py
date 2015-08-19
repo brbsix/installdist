@@ -134,9 +134,13 @@ class Installer:
         if distpath is None:
             distpath = '.'
 
-        extension = '.whl' if self.options.wheel else '.tar.gz'
-        directory = os.path.join(distpath, '*' + extension)
-        paths = glob.glob(directory)
+        extensions = ['.whl'] if self.options.wheel else ['.tar.gz', '.zip']
+
+        paths = []
+        for ext in extensions:
+            directory = os.path.join(distpath, '*' + ext)
+            paths += glob.glob(directory)
+
         files = [f for f in paths if os.path.isfile(f) and os.access(f, os.R_OK)]
 
         if files:
@@ -508,17 +512,22 @@ def getmetapath(pkgpath, afo):
     """
     Return path to the metadata file within a tarfile or zipfile object.
 
-    tarfile: PKG-INFO
-    zipfile: metadata.json
+    .tar.gz (TarFile): PKG-INFO
+    .whl (ZipFile): metadata.json
+    .zip (ZipFile): PKG-INFO
     """
 
     if isinstance(afo, tarfile.TarFile):
         for path in afo.getnames():
             if path.endswith('/PKG-INFO'):
                 return path
-    elif isinstance(afo, zipfile.ZipFile):
+    elif isinstance(afo, zipfile.ZipFile) and afo.filename.endswith('.whl'):
         for path in afo.namelist():
             if path.endswith('.dist-info/metadata.json'):
+                return path
+    elif isinstance(afo, zipfile.ZipFile) and afo.filename.endswith('.zip'):
+        for path in afo.namelist():
+            if path.endswith('/PKG-INFO'):
                 return path
 
     LOGGER.critical("Unable to identify metadata file for '%s'",
@@ -556,6 +565,17 @@ def getmetafield(pkgpath, field):
                 return metadata[field.lower()]
             except KeyError:
                 pass
+
+    # package is a zip archive
+    elif pkgpath.endswith('.zip'):
+
+        with zipfile.ZipFile(pkgpath) as zfo:
+            mfo = zfo.read(getmetapath(pkgpath, zfo)).decode()
+            metalines = mfo.splitlines()
+
+        for line in metalines:
+            if line.startswith(field.capitalize() + ': '):
+                return line.split(': ')[-1]
 
     LOGGER.critical("Unable to extract field '%s' from package '%s'",
                     field, pkgpath)
