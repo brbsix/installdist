@@ -301,9 +301,11 @@ class Installer:
         results = {}
 
         if info:
-            results['name'] = info[0]
-            results['version'] = info[1]
-            results['location'] = info[2]
+            results = {
+                'name': info[0],
+                'version': info[1],
+                'location': info[2]
+                }
 
         return results
 
