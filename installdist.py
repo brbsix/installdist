@@ -169,16 +169,39 @@ class Installer:
     # def installpackage(self):
     #     """Install package archive with pip."""
 
+    #     args = ['install', '--user', self.pkgpath]
+
+    #     # install to system
+    #     if self.options.system:
+    #         args.remove('--user')
+
     #     logmsg = "Installing %s %s (%s)", self.pkgname, self.pkgversion, self.pkgpath
 
     #     if self.options.dryrun:
     #         LOGGER.dryrun(*logmsg)
+    #         LOGGER.dryrun(args)
     #     else:
     #         LOGGER.info(*logmsg)
+    #         LOGGER.info(args)
+    #         import pip
+    #         pip.main(args)
+
+    # def installpackage(self):
+    #     """Install package archive with pip."""
+
+    #     args = ([] if self.options.system else ['--user']) + [self.pkgpath]
+
+    #     logmsg = "Installing %s %s (%s)", self.pkgname, self.pkgversion, self.pkgpath
+
+    #     if self.options.dryrun:
+    #         LOGGER.dryrun(*logmsg)
+    #         LOGGER.dryrun(args)
+    #     else:
+    #         LOGGER.info(*logmsg)
+    #         LOGGER.info(args)
     #         from pip.commands.install import InstallCommand
     #         install = InstallCommand()
-    #         args = [] if self.options.system else ['--user']
-    #         install.main(args + [self.pkgpath])
+    #         install.main(args)
 
     def main(self, args=None):
         """Start package un/installation process."""
@@ -312,6 +335,22 @@ class Installer:
             LOGGER.info(*logmsg)
             LOGGER.info(args)
             _execute(args)
+
+    # def uninstallpackage(self):
+    #     """Uninstall package archive with pip."""
+
+    #     args = ['uninstall', self.pkgname]
+
+    #     logmsg = "Uninstalling %s %s", self.pkgname, self.results['version']
+
+    #     if self.options.dryrun:
+    #         LOGGER.dryrun(*logmsg)
+    #         LOGGER.dryrun(args)
+    #     else:
+    #         LOGGER.info(*logmsg)
+    #         LOGGER.info(args)
+    #         import pip
+    #         pip.main(args)
 
     # def uninstallpackage(self):
     #     """Uninstall package archive with pip."""
