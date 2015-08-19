@@ -36,10 +36,10 @@ Usage
       -w, --wheel           install wheel package
 
     NOTE: By default, installdist will uninstall any pre-existing installation
-    before using `pip3 install --user` to install the highest version tarball
-    available.
+    before using `pip3 install --user` to install the highest version zip or
+    tarball package available.
 
-Please note that by default, :code:`installdist` will use :code:`pip3 install --user` to install the highest version tarball available. If you'd like to use :code:`pip2`, wheel packages, the package with the most recent timestamp, or install to the system installation, use the appropriate flag.
+Please note that by default, :code:`installdist` will use :code:`pip3 install --user` to install the highest version zip or tarball package available. If you'd like to use :code:`pip2`, wheel packages, the package with the most recent timestamp, or install to the system installation, use the appropriate flag.
 
 :code:`installdist` will not make changes without prompting you for confirmation, so don't fear mistakes. To test a command, you may use the dry run flag (:code:`-d` or :code:`--dry-run`). It will simulate the command exactly, including any prompts.
 

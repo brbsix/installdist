@@ -424,7 +424,7 @@ def _parser(args):
         description='Smartly install local Python source packages.',
         epilog='NOTE: By default, %(prog)s will uninstall any pre-existing '
                'installation before using `pip3 install --user` to install '
-               'the highest version tarball available.',
+               'the highest version zip or tarball package available.',
         usage='%(prog)s [OPTIONS] FILES/FOLDERS')
     parser.add_argument(
         '-2', '--pip2',
