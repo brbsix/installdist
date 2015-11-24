@@ -17,6 +17,7 @@ __version__ = '0.2.1'
 
 
 class Installer:
+
     """A pip-like wrapper for managing package un/installation."""
 
     def __init__(self):
@@ -96,7 +97,8 @@ class Installer:
         """Request confirmation from the user."""
 
         if self.options.auto:
-            LOGGER.info("Bypassing prompt for user input (prompt='%s')", prompt)
+            LOGGER.info("Bypassing prompt for user input (prompt='%s')",
+                        prompt)
             return True
 
         rawinput = input() if prompt is None else input(prompt)
@@ -138,7 +140,8 @@ class Installer:
             directory = os.path.join(distpath, '*' + ext)
             paths += glob.glob(directory)
 
-        files = [f for f in paths if os.path.isfile(f) and os.access(f, os.R_OK)]
+        files = [f for f in paths if os.path.isfile(f) and
+                 os.access(f, os.R_OK)]
 
         if files:
             if self.options.newsort:
@@ -157,7 +160,8 @@ class Installer:
         if self.options.system:
             args.remove('--user')
 
-        logmsg = "Installing %s %s (%s)", self.pkgname, self.pkgversion, self.pkgpath
+        logmsg = "Installing %s %s (%s)", \
+                 self.pkgname, self.pkgversion, self.pkgpath
 
         if self.options.dryrun:
             LOGGER.dryrun(*logmsg)
@@ -176,7 +180,8 @@ class Installer:
     #     if self.options.system:
     #         args.remove('--user')
 
-    #     logmsg = "Installing %s %s (%s)", self.pkgname, self.pkgversion, self.pkgpath
+    #     logmsg = "Installing %s %s (%s)", \
+    #              self.pkgname, self.pkgversion, self.pkgpath
 
     #     if self.options.dryrun:
     #         LOGGER.dryrun(*logmsg)
@@ -192,7 +197,8 @@ class Installer:
 
     #     args = ([] if self.options.system else ['--user']) + [self.pkgpath]
 
-    #     logmsg = "Installing %s %s (%s)", self.pkgname, self.pkgversion, self.pkgpath
+    #     logmsg = "Installing %s %s (%s)", \
+    #              self.pkgname, self.pkgversion, self.pkgpath
 
     #     if self.options.dryrun:
     #         LOGGER.dryrun(*logmsg)
@@ -501,7 +507,8 @@ def detectdistpath(startpath):
 def dryrun(self, message, *args, **kwargs):
     """Create custom log level function for logging module."""
     if self.isEnabledFor(logging.DRYRUN):
-        self._log(logging.DRYRUN, message, args, **kwargs)  # pylint: disable=W0212
+        # pylint: disable=W0212
+        self._log(logging.DRYRUN, message, args, **kwargs)
 
 
 def getmetapath(pkgpath, afo):
