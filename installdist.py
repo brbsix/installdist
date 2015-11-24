@@ -47,29 +47,6 @@ class Installer:
         LOGGER.info("Configured to install packages with: '%s'",
                     self.options.pipv)
 
-    # def checkpip(self):
-    #     """Configure pip and verify that the desired version is available."""
-
-    #     def finder(script):
-    #         """Raise exception upon failure to find executable."""
-    #         try:
-    #             from distutil.spawn import find_executable
-    #         except ImportError:
-    #             from shutil import which as find_executable
-
-    #         if not find_executable(script):
-    #             raise FileNotFoundError("'{0}' not available".format(script))
-
-    #     if self.options.pip2:
-    #         finder('pip2')
-    #         self.options.pipv = 'pip2'
-    #     else:
-    #         finder('pip3')
-    #         self.options.pipv = 'pip3'
-
-    #     LOGGER.info("Configured to install packages with: '%s'",
-    #                 self.options.pipv)
-
     def configpackage(self):
         """Determine what package is to be installed and from where."""
 
