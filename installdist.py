@@ -30,19 +30,52 @@ class Installer:
     def checkpip(self):
         """Configure pip and verify that the desired version is available."""
 
-        def finder(script):
-            """Raise exception upon failure to find executable."""
-            try:
-                from distutil.spawn import find_executable
-            except ImportError:
-                from shutil import which as find_executable
+        try:
+            # Python 3.3+ only
+            from shutil import which
+        except ImportError:
+            def which(cmd):
+                """
+                Given a command, return the path which conforms to the given
+                mode on the PATH, or None if there is no such file.
+                """
 
-            if find_executable(script):
-                return script
-            else:
-                raise FileNotFoundError("'{0}' not available".format(script))
+                def _access_check(path):
+                    """
+                    Check that a given file can be accessed with the correct
+                    mode. Additionally check that `path` is not a directory.
+                    """
+                    return (os.path.exists(path) and
+                            os.access(path, os.F_OK | os.X_OK) and not
+                            os.path.isdir(path))
 
-        self.options.pipv = finder('pip2') if self.options.pip2 else finder('pip3')
+                # If we're given a path with a directory part, look it up
+                # directly rather than referring to PATH directories. This
+                # includes checking relative to the current directory,
+                # e.g. ./script
+                if os.path.dirname(cmd):
+                    if _access_check(cmd):
+                        return cmd
+                    return None
+
+                paths = os.environ.get('PATH',
+                                       os.defpath.lstrip(':')).split(':')
+
+                seen = set()
+                for path in paths:
+                    if path not in seen:
+                        seen.add(path)
+                        name = os.path.join(path, cmd)
+                        if _access_check(name):
+                            return name
+                return None
+
+        wanted = 'pip' + ('2' if self.options.pip2 else '3')
+
+        self.options.pipv = which(wanted)
+
+        if self.options.pipv is None:
+            raise FileNotFoundError("'{0}' not available".format(wanted))
 
         LOGGER.info("Configured to install packages with: '%s'",
                     self.options.pipv)
