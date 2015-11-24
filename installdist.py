@@ -72,9 +72,6 @@ class Installer:
     def configpackage(self):
         """Determine what package is to be installed and from where."""
 
-        # convert list to string (i.e. [None] ==> None)
-        self.options.target = self.options.target[0]
-
         pkgpath = None
 
         if self.options.target is not None:
@@ -481,7 +478,6 @@ def _parser(args):
         dest='wheel',
         help='install wheel package')
     parser.add_argument(
-        action='append',
         dest='target',
         help=argparse.SUPPRESS,
         nargs='?')
