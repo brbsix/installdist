@@ -11,7 +11,7 @@ installdist
   :target: https://pypi.python.org/pypi/installdist
 
 
-:code:`installdist` is used to ease the installation of local Python packages. It will probably be most useful to developers who are working with Python packages. With a single command, it will look for the nearest *dist/* directory, identify the package with the highest version (or most recent timestamp), uninstall any pre-existing package with the same name, then install the package to the local installation. It doesn't do anything that :code:`pip` fundamentally can't, it just simplifies the workflow greatly.
+:code:`installdist` is used to ease the installation of local Python packages. It will probably be most useful to developers who are working with Python packages. With a single command, it will look for the nearest *dist/* directory, identify the package with the highest version (or most recent timestamp), uninstall any pre-existing package with the same name, then install the package to the local installation. It doesn't do anything that :code:`pip` fundamentally can't, it just simplifies the workflow.
 
 
 Installation
