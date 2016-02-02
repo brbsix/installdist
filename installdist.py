@@ -487,7 +487,7 @@ def _parser(args):
     parser.add_argument(
         '--version',
         action='version',
-        version='{0} {1}'.format(__program__, __version__))
+        version='%(prog)s ' + __version__)
     parser.add_argument(
         '-w', '--wheel',
         action='store_true',
