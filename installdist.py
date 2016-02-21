@@ -323,7 +323,7 @@ class Installer:
                 'name': info[0],
                 'version': info[1],
                 'location': info[2]
-                }
+            }
 
         return results
 
