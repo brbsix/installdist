@@ -302,18 +302,19 @@ class Installer:
         awk = "awk '/^Name: / {n=$2} /^Version: / {v=$2} /^Location: / {l=" \
               "$2} END{if (n==\"\") exit 1; printf \"%s|%s|%s\", n, v, l}'"
 
-        process = subprocess.Popen(
-            '{0} show {1} | {2}'.format(self.options.pipv, self.pkgname, awk),
-            executable='bash',
-            shell=True,
-            stderr=subprocess.PIPE,
-            stdout=subprocess.PIPE)
-
-        # check for a non-zero return code
-        if process.wait(timeout=5) != 0:
+        try:
+            data = subprocess.check_output(
+                '{0} show {1} | {2}'.format(self.options.pipv,
+                                            self.pkgname,
+                                            awk),
+                shell=True,
+                stderr=subprocess.DEVNULL,
+                timeout=5,
+                universal_newlines=True)
+        except (subprocess.CalledProcessError, subprocess.TimeoutExpired):
             return False
 
-        info = process.stdout.read().decode().split('|')
+        info = data.split('|')
 
         results = {}
 
